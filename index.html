@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Oz County Treasures</title>
+  <meta name="description" content="Explore Ozaukee County's parks, trails, history, and hidden gems on a retro-styled interactive map." />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Work+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- MarkerCluster -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+  <!-- Papa Parse -->
+  <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header id="site-header">
+  <div class="brand">
+    <img src="data/photos/logo.png" alt="Oz County Treasures Logo" class="logo">
+    <div class="brand-text">
+      <h1>Treasuress of Oz</h1>
+      <p class="tag">Celebrating the Natural Gems of Ozaukee County</p>
+    </div>
+  </div>
+  <nav class="nav-links">
+    <a href="index.html" class="nav-item active">Home</a>
+    <a href="about.html" class="nav-item">About</a>
+    <a href="links.html" class="nav-item">Links</a>
+  </nav>
+</header>
+
+
+  <main id="layout">
+    <aside id="sidebar" aria-label="Treasure list and filters">
+      <div class="panel">
+        <div class="search-row">
+          <input id="search" type="search" placeholder="Search places…" aria-label="Search" />
+          <select id="filterType" aria-label="Filter by type">
+            <option value="">Type: All</option>
+            <option value="naturepreserve">Nature Preserve</option>
+            <option value="parks">Park</option>
+            <option value="wpa">WPA</option>
+            <option value="other">Other</option>
+          </select>
+          <select id="filterLocation" aria-label="Filter by location (town/city)">
+            <option value="">Location: All</option>
+          </select>
+          <select id="filterActivity" aria-label="Filter by activity">
+            <option value="">Activity: All</option>
+          </select>
+        </div>
+        <div class="chips" id="chipBar"></div>
+      </div>
+
+      <ul id="list" class="list" aria-live="polite"></ul>
+    </aside>
+
+    <section id="map-wrap">
+      <div id="map" role="region" aria-label="Map of Ozaukee County"></div>
+
+      <div id="legend" class="legend" aria-hidden="false">
+        <div class="legend-title">Legend</div>
+        <div class="legend-row"><img src="data/icons/naturepreserve.png" alt="nature preserve icon"><span>Nature Preserve</span></div>
+        <div class="legend-row"><img src="data/icons/parks.png" alt="park icon"><span>Park</span></div>
+        <div class="legend-row"><img src="data/icons/wpa.png" alt="waterfowl production area icon"><span>WPA</span></div>
+        <div class="legend-row"><img src="data/icons/other.png" alt="other icon"><span>Other</span></div>
+        <div class="legend-row">
+  <span style="display:inline-block;width:18px;height:3px;background:#2f7c31;border-radius:2px;"></span>
+  <span>Interurban Trail</span>
+</div>
+      </div>
+
+      <!-- Detail Drawer -->
+      <div id="detail-drawer" class="drawer" aria-hidden="true">
+        <button class="drawer-close" type="button" aria-label="Close details">✕</button>
+        <div class="drawer-body" id="drawerBody"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="site-footer">
+    <p>Basemap © <a href="https://carto.com/" target="_blank" rel="noopener">CARTO</a> · © OpenStreetMap contributors · Built by Joey Willman</p>
+  </footer>
+
+  <script src="main.js"></script>
+</body>
+</html>
