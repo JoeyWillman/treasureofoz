@@ -19,14 +19,44 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('resize', ()=> map.invalidateSize());
 
   // ----- UI elements -----
-  const menuBtn = document.getElementById('menuBtn');
-  const sidebar = document.getElementById('sidebar');
-  const listEl = document.getElementById('list');
-  const searchEl = document.getElementById('search');
-  const typeEl = document.getElementById('filterType');
-  const locEl = document.getElementById('filterLocation');
-  const actEl = document.getElementById('filterActivity');
-  const chipBar = document.getElementById('chipBar');
+  const $ = id => document.getElementById(id);
+  const menuBtn = $('menuBtn');
+  const sidebar = $('sidebar');
+  const listEl  = $('list');
+  const chipBar = $('chipBar');
+
+  // Desktop controls
+  const dSearch = $('search');
+  const dType   = $('filterType');
+  const dLoc    = $('filterLocation');
+  const dAct    = $('filterActivity');
+
+  // Mobile controls (in the dedicated mobile filter bar)
+  const mSearch = $('mSearch');
+  const mType   = $('mFilterType');
+  const mLoc    = $('mFilterLocation');
+  const mAct    = $('mFilterActivity');
+
+  // Pick the active control (mobile has priority if present)
+  const pickEl = (mEl, dEl) => mEl || dEl;
+
+  // Unified handles used throughout
+  const searchInput = pickEl(mSearch, dSearch);
+  const typeSelect  = pickEl(mType,   dType);
+  const locSelect   = pickEl(mLoc,    dLoc);
+  const actSelect   = pickEl(mAct,    dAct);
+
+  // Keep desktop & mobile controls mirrored both ways
+  function mirror(from, to){
+    if (!from || !to || from === to) return;
+    const sync = () => { to.value = from.value; };
+    from.addEventListener('input', sync);
+    from.addEventListener('change', sync);
+  }
+  mirror(mSearch, dSearch); mirror(dSearch, mSearch);
+  mirror(mType,   dType);   mirror(dType,   mType);
+  mirror(mLoc,    dLoc);    mirror(dLoc,    mLoc);
+  mirror(mAct,    dAct);    mirror(dAct,    mAct);
 
   if (menuBtn && sidebar){
     menuBtn.addEventListener('click', ()=>{
@@ -52,6 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function pick(obj, keys){ for (const k of keys){ if (obj[k] != null && String(obj[k]).trim() !== '') return obj[k]; } return ''; }
   function slugify(str){ return String(str||'').toLowerCase().trim().replace(/&/g,'and').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); }
   function uniq(arr){ return Array.from(new Set(arr.filter(Boolean))); }
+  const setValueBoth = (mEl, dEl, v) => { if (mEl) mEl.value = v; if (dEl) dEl.value = v; };
 
   const CATEGORY_MAP = {
     'naturepreserve': 'naturepreserve', 'preserve': 'naturepreserve', 'natural-area': 'naturepreserve',
@@ -89,8 +120,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Drawer
-  const drawer = document.getElementById('detail-drawer');
-  const drawerBody = document.getElementById('drawerBody');
+  const drawer = $('detail-drawer');
+  const drawerBody = $('drawerBody');
   document.addEventListener('click', (e)=>{
     if (e.target.closest('.drawer-close')) drawer.setAttribute('aria-hidden', 'true');
   });
@@ -183,53 +214,47 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-// === Interurban Trail (GeoJSON) ===
-map.createPane('trailPane');
-map.getPane('trailPane').style.zIndex = 450;
-map.getPane('trailPane').style.pointerEvents = 'auto';
+  // === Interurban Trail (GeoJSON) ===
+  map.createPane('trailPane');
+  map.getPane('trailPane').style.zIndex = 450;
+  map.getPane('trailPane').style.pointerEvents = 'auto';
 
-const TRAIL_POPUP_HTML = `
-  <div class="popup">
-    <h3 style="margin:.1rem 0 .4rem;font-size:1.1rem;color:#2f7c31;">Ozaukee Interurban Trail</h3>
-    <p>The Ozaukee Interurban Trail was not always a trail, but the route of the Interurban Electric Railway. It opened in 1908 and ran from Milwaukee to Sheboygan. The Northern Route had stops in the mostly rural communities of Brown Deer, Thiensville, Cedarburg, Grafton, Port Washington, Belgium, Cedar Grove, Oostburg, and Sheboygan. Until it ceased operation completely in 1951, many people leaving the city for work or play traveled on the railway.</p>
-    <p>Workers used the railway to access factory jobs, making cigars, shoes, nails, and pearl buttons. Perhaps the most famous “commuters” were the African American blues singers who traveled north in the 1920s and 30s to use the recording studio in the Grafton chair factory, which eventually became Paramount Records.</p>
-    <p>After the railway ceased operation, the land was retained, and the company, by that time called Wisconsin Electric (now We Energies), began to convert parts of the trail into bike paths in 1975—an easy conversion because the trail was built on old railroad beds. In 1998, Ozaukee County and several of its communities received state funding to lease the land from Wisconsin Electric and complete what is now known as the Ozaukee Interurban Trail.</p>
-    <p>
-      <a class="btn small" href="https://www.interurbantrail.com/" target="_blank" rel="noopener">Official Website</a>
-      <a class="btn small" href="https://joeywillman.github.io/ozaukee-interurbantrail-birding/" target="_blank" rel="noopener">Trailside Birding Guide</a>
-    </p>
-  </div>
-`;
+  const TRAIL_POPUP_HTML = `
+    <div class="popup">
+      <h3 style="margin:.1rem 0 .4rem;font-size:1.1rem;color:#2f7c31;">Ozaukee Interurban Trail</h3>
+      <p>The Ozaukee Interurban Trail was not always a trail, but the route of the Interurban Electric Railway. It opened in 1908 and ran from Milwaukee to Sheboygan. The Northern Route had stops in the mostly rural communities of Brown Deer, Thiensville, Cedarburg, Grafton, Port Washington, Belgium, Cedar Grove, Oostburg, and Sheboygan. Until it ceased operation completely in 1951, many people leaving the city for work or play traveled on the railway.</p>
+      <p>Workers used the railway to access factory jobs, making cigars, shoes, nails, and pearl buttons. Perhaps the most famous “commuters” were the African American blues singers who traveled north in the 1920s and 30s to use the recording studio in the Grafton chair factory, which eventually became Paramount Records.</p>
+      <p>After the railway ceased operation, the land was retained, and the company, by that time called Wisconsin Electric (now We Energies), began to convert parts of the trail into bike paths in 1975—an easy conversion because the trail was built on old railroad beds. In 1998, Ozaukee County and several of its communities received state funding to lease the land from Wisconsin Electric and complete what is now known as the Ozaukee Interurban Trail.</p>
+      <p>
+        <a class="btn small" href="https://www.interurbantrail.com/" target="_blank" rel="noopener">Official Website</a>
+        <a class="btn small" href="https://joeywillman.github.io/ozaukee-interurbantrail-birding/" target="_blank" rel="noopener">Trailside Birding Guide</a>
+      </p>
+    </div>
+  `;
 
-const trailStyle = {
-  color: '#2f7c31',        // deep green
-  weight: 4,
-  opacity: 0.9,
-  dashArray: '8 6',        // dashed pattern
-  lineJoin: 'round'
-};
+  const trailStyle = {
+    color: '#2f7c31',
+    weight: 4,
+    opacity: 0.9,
+    dashArray: '8 6',
+    lineJoin: 'round'
+  };
 
-fetch('data/trail.geojson')
-  .then(r => r.json())
-  .then(geo => {
-    const trailLayer = L.geoJSON(geo, {
-      pane: 'trailPane',
-      style: trailStyle,
-      onEachFeature: (feature, layer) => {
-        layer.bindPopup(TRAIL_POPUP_HTML, { maxWidth: 420 });
+  fetch('data/trail.geojson')
+    .then(r => r.json())
+    .then(geo => {
+      L.geoJSON(geo, {
+        pane: 'trailPane',
+        style: trailStyle,
+        onEachFeature: (_, layer) => {
+          layer.bindPopup(TRAIL_POPUP_HTML, { maxWidth: 420 });
+          layer.setStyle({ className: 'trail-line' }); // animated dashed line via CSS
+        }
+      }).addTo(map);
+    })
+    .catch(err => console.error('Trail GeoJSON load error:', err));
 
-        // Subtle glow effect by duplicating a thicker, blurred line underneath
-        layer.setStyle({
-          className: 'trail-line'
-        });
-      }
-    }).addTo(map);
-  })
-  .catch(err => console.error('Trail GeoJSON load error:', err));
-
-
-
-  // POPUP
+  // ----- Popups -----
   function popupHTML(r){
     const iconSrc = getIconPath(r.category, r.icon);
     const acts = r.activities.length ? `<div class="chips chip-row">${r.activities.map(a=>`<span class="chip">${a}</span>`).join('')}</div>` : '';
@@ -255,7 +280,7 @@ fetch('data/trail.geojson')
       </div>`;
   }
 
-  // SIDEBAR ITEM with activities + overflow “+x more”
+  // ----- Sidebar list items (desktop) -----
   function sidebarItemHTML(r){
     const iconSrc = getIconPath(r.category, r.icon);
     const sub = r.description ? firstSentence(r.description) : (r.address || r.location || r.category || '');
@@ -285,51 +310,60 @@ fetch('data/trail.geojson')
     markers.push(m);
     markerById.set(r.id, m);
 
-    const li = document.createElement('li');
-    li.className = 'card';
-    li.innerHTML = sidebarItemHTML(r);
-    li.addEventListener('click', ()=>{
-      map.setView([r.lat, r.lon], Math.max(map.getZoom(), 14));
-      m.openPopup();
-      sidebar.classList.remove('open');
-      setTimeout(()=> map.invalidateSize(), 150);
-    });
-    listEl.appendChild(li);
+    if (listEl) {
+      const li = document.createElement('li');
+      li.className = 'card';
+      li.innerHTML = sidebarItemHTML(r);
+      li.addEventListener('click', ()=>{
+        map.setView([r.lat, r.lon], Math.max(map.getZoom(), 14));
+        m.openPopup();
+        if (sidebar) sidebar.classList.remove('open');
+        setTimeout(()=> map.invalidateSize(), 150);
+      });
+      listEl.appendChild(li);
+    }
   }
 
   function clearLayers(){
     cluster.clearLayers();
     markers = [];
     markerById.clear();
-    listEl.innerHTML = '';
+    if (listEl) listEl.innerHTML = '';
   }
 
   // ----- Filters -----
   function buildFilterOptions(data){
-    // Locations from CSV 'location' only
+    const setOptions = (select, options, firstLabel) => {
+      if (!select) return;
+      select.innerHTML = `<option value="">${firstLabel}</option>` + options;
+    };
+
+    // Locations from CSV 'location'
     const locations = uniq(data.map(r => r.location).filter(Boolean))
       .sort((a,b)=>a.localeCompare(b));
-    locEl.innerHTML = `<option value="">Location: All</option>` +
-      locations.map(c=>`<option value="${c}">${c}</option>`).join('');
+    const locOptions = locations.map(c=>`<option value="${c}">${c}</option>`).join('');
+    setOptions(dLoc, locOptions, 'Location: All');
+    setOptions(mLoc, locOptions, 'Location: All');
 
-    // Activities from CSV 'activities' only
+    // Activities from CSV 'activities'
     const acts = uniq(data.flatMap(r=>r.activities)).sort((a,b)=>a.localeCompare(b));
-    actEl.innerHTML = `<option value="">Activity: All</option>` +
-      acts.map(a=>`<option value="${a}">${a}</option>`).join('');
+    const actOptions = acts.map(a=>`<option value="${a}">${a}</option>`).join('');
+    setOptions(dAct, actOptions, 'Activity: All');
+    setOptions(mAct, actOptions, 'Activity: All');
   }
 
   function applyFilters(){
-    const q = (searchEl.value || '').trim().toLowerCase();
-    const t = (typeEl.value || '').toLowerCase();
-    const loc = (locEl.value || '').toLowerCase();
-    const act = (actEl.value || '').toLowerCase();
+    const q   = (searchInput?.value || '').trim().toLowerCase();
+    const t   = (typeSelect?.value   || '').toLowerCase();
+    const loc = (locSelect?.value    || '').toLowerCase();
+    const act = (actSelect?.value    || '').toLowerCase();
 
     clearLayers();
 
     const filtered = rows.filter(r=>{
       const matchesType = !t || (r.category || '').toLowerCase() === t;
-      const matchesLoc = !loc || (r.location || '').toLowerCase() === loc;
-      const matchesAct = !act || (r.activities||[]).some(a => a.toLowerCase() === act);
+      const matchesLoc  = !loc || (r.location || '').toLowerCase() === loc;
+      const matchesAct  = !act || (r.activities||[]).some(a => a.toLowerCase() === act);
       const hay = `${r.name} ${r.description} ${r.address} ${r.category} ${(r.activities||[]).join(' ')}`.toLowerCase();
       const matchesQ = !q || hay.includes(q);
       return matchesType && matchesLoc && matchesAct && matchesQ;
@@ -349,6 +383,7 @@ fetch('data/trail.geojson')
   }
 
   function renderChips({q, t, loc, act, count}){
+    if (!chipBar) return;
     chipBar.innerHTML = '';
     const make = (label, onClear)=>{
       const el = document.createElement('button');
@@ -358,18 +393,18 @@ fetch('data/trail.geojson')
       el.addEventListener('click', onClear);
       chipBar.appendChild(el);
     };
-    if(q) make(`Search: "${q}" ✕`, ()=>{ searchEl.value=''; applyFilters(); });
-    if(t) make(`Type: ${t} ✕`, ()=>{ typeEl.value=''; applyFilters(); });
-    if(loc) make(`Location: ${loc} ✕`, ()=>{ locEl.value=''; applyFilters(); });
-    if(act) make(`Activity: ${act} ✕`, ()=>{ actEl.value=''; applyFilters(); });
+    if(q)   make(`Search: "${q}" ✕`, ()=>{ setValueBoth(mSearch, dSearch, ''); applyFilters(); });
+    if(t)   make(`Type: ${t} ✕`,      ()=>{ setValueBoth(mType,   dType,   ''); applyFilters(); });
+    if(loc) make(`Location: ${loc} ✕`,()=>{ setValueBoth(mLoc,    dLoc,    ''); applyFilters(); });
+    if(act) make(`Activity: ${act} ✕`,()=>{ setValueBoth(mAct,    dAct,    ''); applyFilters(); });
     make(`${count} result${count===1?'':'s'}`, ()=>{});
   }
 
-  // Auto-refresh when selects change / search input
-  searchEl.addEventListener('input', applyFilters);
-  typeEl.addEventListener('change', applyFilters);
-  locEl.addEventListener('change', applyFilters);
-  actEl.addEventListener('change', applyFilters);
+  // Auto-refresh on input/changes (bind to unified controls)
+  if (searchInput) searchInput.addEventListener('input',  applyFilters);
+  if (typeSelect)  typeSelect.addEventListener('change',  applyFilters);
+  if (locSelect)   locSelect.addEventListener('change',   applyFilters);
+  if (actSelect)   actSelect.addEventListener('change',   applyFilters);
 
   // Details button (from popup)
   document.addEventListener('click', (e)=>{
