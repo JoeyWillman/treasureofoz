@@ -18,24 +18,40 @@ document.addEventListener('DOMContentLoaded', () => {
   requestAnimationFrame(()=> map.invalidateSize());
   window.addEventListener('resize', ()=> map.invalidateSize());
 
-  // Create an info button as a Leaflet control (top-right, like zoom)
+// Create a custom round info control (top-right)
 const InfoControl = L.Control.extend({
   options: { position: 'topright' },
   onAdd: function () {
-    const btn = L.DomUtil.create('button', 'map-info leaflet-bar');
+    // Control container
+    const container = L.DomUtil.create('div', 'leaflet-control map-info-ctl');
+
+    // Accessible, round button
+    const btn = L.DomUtil.create('button', 'map-info-btn', container);
     btn.id = 'mapInfoBtn';
     btn.type = 'button';
+    btn.setAttribute('aria-haspopup', 'dialog');
+    btn.setAttribute('aria-controls', 'info-modal');
     btn.setAttribute('aria-label', 'How to use this map');
-    btn.textContent = '?';
+    btn.title = 'How to use this map';
 
-    // Prevent the map from panning/zooming when user interacts with the button
-    L.DomEvent.disableClickPropagation(btn);
-    L.DomEvent.disableScrollPropagation(btn);
+    // SVG question mark (crisp at any scale)
+    btn.innerHTML = `
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <circle cx="12" cy="12" r="10" fill="none"></circle>
+        <path d="M9.75 9a2.25 2.25 0 1 1 3.59 1.84c-.8.57-1.59 1.08-1.59 2.41v.25" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <circle cx="12" cy="17.25" r="1" fill="currentColor"/>
+      </svg>
+    `;
 
-    return btn;
+    // Prevent map drag/scroll when interacting with the control
+    L.DomEvent.disableClickPropagation(container);
+    L.DomEvent.disableScrollPropagation(container);
+
+    return container;
   }
 });
 map.addControl(new InfoControl());
+
 
 
   // ----- UI elements -----
@@ -199,6 +215,17 @@ map.addControl(new InfoControl());
     return s.length > 90 ? s.slice(0, 90).replace(/\s+\S*$/,'') + '…' : s;
   }
 
+  // Preserve paragraphs/line breaks when the description is plain text
+function formatDescription(htmlOrText=''){
+  const s = String(htmlOrText || '');
+  const looksLikeHTML = /<\/?[a-z][\s\S]*>/i.test(s);
+  if (looksLikeHTML) return s; // author-provided HTML
+  // Convert plain text to <p>…</p> and <br>
+  const parts = s.split(/\n{2,}/).map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`);
+  return parts.join('');
+}
+
+
   // Drawer
   const drawer = $('detail-drawer');
   const drawerBody = $('drawerBody');
@@ -222,12 +249,15 @@ map.addControl(new InfoControl());
     const gm = `https://www.google.com/maps?q=${encodeURIComponent(r.lat+','+r.lon)}&daddr=${encodeURIComponent(r.name)}`;
     return `<a class="btn" href="${gm}" target="_blank" rel="noopener">Directions</a>`;
   }
-  function suggestSimilar(current){
-    const sameCat = rows.filter(x => x !== current && x.category === current.category).slice(0,2);
-    if (!sameCat.length) return '';
-    const items = sameCat.map(x => `<li><button class="link js-zoom-to" data-lat="${x.lat}" data-lon="${x.lon}">${x.name}</button></li>`).join('');
-    return `<div style="margin-top:1rem"><strong>More like this</strong><ul>${items}</ul></div>`;
-  }
+ function suggestSimilar(current){
+  const sameCat = rows.filter(x => x !== current && x.category === current.category).slice(0, 4);
+  if (!sameCat.length) return '';
+  const items = sameCat.map(x =>
+    `<button class="link tag js-zoom-to" data-lat="${x.lat}" data-lon="${x.lon}" type="button">${x.name}</button>`
+  ).join('');
+  return `<div class="morelike-wrap"><strong>More like this</strong><div class="morelike">${items}</div></div>`;
+}
+
   document.addEventListener('click', (e)=>{
     const b = e.target.closest('.js-zoom-to');
     if (!b) return;
@@ -237,30 +267,61 @@ map.addControl(new InfoControl());
     map.setView([lat, lon], Math.max(map.getZoom(), 14));
   });
 
-  function openDetails(r){
-    const website = r.website ? `<a class="btn" href="${r.website}" target="_blank" rel="noopener">Website ↗</a>` : '';
-    const address = r.address ? `<span class="chip"><strong>Address:</strong> ${r.address}</span>` : '';
-    const photo = r.photo ? `<img src="${r.photo}" alt="${r.name}" loading="lazy" style="margin:.6rem 0">` : '';
-    const actChips = r.activities.length ? `<div class="chips chip-row">${r.activities.map(a=>`<span class="chip">${a}</span>`).join('')}</div>` : '';
+  // Preserve paragraphs/line breaks when the description is plain text
+function formatDescription(htmlOrText=''){
+  const s = String(htmlOrText || '');
+  const looksLikeHTML = /<\/?[a-z][\s\S]*>/i.test(s);
+  if (looksLikeHTML) return s; // author-provided HTML
+  // Convert plain text to <p>…</p> and <br>
+  const parts = s.split(/\n{2,}/).map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`);
+  return parts.join('');
+}
 
-    drawerBody.innerHTML = `
-      <h2>${r.name}</h2>
-      <div class="meta-row">
-        <span class="chip">${r.category || 'other'}</span>
-        ${r.location ? `<span class="chip muted">${r.location}</span>` : ''}
-      </div>
-      ${actChips}
-      ${photo}
-      ${safeHTML(r.description) || '<p><em>No description yet.</em></p>'}
-      <div class="meta-row">
-        ${address || ''}
-        ${website || ''}
-        ${directionsBtn(r)}
-      </div>
-      ${suggestSimilar(r)}
-    `;
-    openDrawerA11y();
-  }
+
+ function openDetails(r){
+  const website = r.website ? `<a class="btn" href="${r.website}" target="_blank" rel="noopener">Website ↗</a>` : '';
+  const address = r.address ? `<span class="chip"><strong>Address:</strong> ${r.address}</span>` : '';
+  const photo = r.photo ? `<img src="${r.photo}" alt="${r.name}" loading="lazy" style="margin:.6rem 0">` : '';
+
+  // activities will be fitted to one line using layoutActs after insertion
+  const actsDataAttr = (r.activities && r.activities.length)
+    ? ` data-acts='${JSON.stringify(r.activities)}'`
+    : '';
+
+  drawerBody.innerHTML = `
+    <h2>${r.name}</h2>
+    <div class="meta-row">
+      <span class="chip">${r.category || 'other'}</span>
+      ${r.location ? `<span class="chip muted">${r.location}</span>` : ''}
+    </div>
+
+    ${ r.activities?.length ? `<div class="acts"${actsDataAttr}></div>` : '' }
+
+    ${photo}
+
+    <div class="desc">${formatDescription(r.description || '') || '<p><em>No description yet.</em></p>'}</div>
+
+    <div class="meta-row">
+      ${address || ''}
+      ${website || ''}
+      ${directionsBtn(r)}
+    </div>
+
+    ${suggestSimilar(r)}
+  `;
+
+  openDrawerA11y();
+
+  // Fit the activity chips in the drawer
+  const acts = drawerBody.querySelector('.acts[data-acts]');
+  if (acts) requestAnimationFrame(() => layoutActs(acts));
+}
+
+window.addEventListener('resize', () => {
+  const acts = drawerBody?.querySelector('.acts[data-acts]');
+  if (acts) layoutActs(acts);
+}, { passive: true });
+
 
   // Normalize row from CSV (use LOCATION + ACTIVITIES only from CSV)
   function normalizeRow(raw, idx){
@@ -297,15 +358,17 @@ map.addControl(new InfoControl());
     };
   }
 
-  function makeIcon(category, overridePath){
-    return L.icon({
-      iconUrl: getIconPath(category, overridePath),
-      iconSize: [28, 28],
-      iconAnchor: [14, 28],
-      popupAnchor: [0, -22],
-      className: 'treasure-icon'
-    });
-  }
+function makeIcon(category, overridePath){
+  const url = getIconPath(category, overridePath);
+  return L.divIcon({
+    // Round badge with centered glyph
+    html: `<div class="treasure-pin"><img src="${url}" alt=""></div>`,
+    className: 'treasure-divicon',      // neutral outer class (no default Leaflet sprite)
+    iconSize: [36, 36],                 // total badge size
+    iconAnchor: [18, 36],               // point sits at bottom center of badge
+    popupAnchor: [0, -30]               // popup above the badge
+  });
+}
 
   // === Interurban Trail (GeoJSON) ===
   map.createPane('trailPane');
@@ -348,30 +411,43 @@ map.addControl(new InfoControl());
     .catch(err => console.error('Trail GeoJSON load error:', err));
 
   // ----- Popups -----
-  function popupHTML(r){
-    const iconSrc = getIconPath(r.category, r.icon);
-    const acts = r.activities.length ? `<div class="chips chip-row">${r.activities.map(a=>`<span class="chip">${a}</span>`).join('')}</div>` : '';
-    const photo = r.photo ? `<img src="${r.photo}" alt="${r.name}" loading="lazy" style="width:100%;border-radius:8px;margin:.4rem 0">` : '';
-    const teaser = r.description ? truncateHTML(r.description, 240) : '<p><em>No description yet.</em></p>';
-    const websiteBtn = r.website ? `<a class="btn small" href="${r.website}" target="_blank" rel="noopener">Website</a>` : '';
-    const gm = `https://www.google.com/maps?q=${encodeURIComponent(r.lat+','+r.lon)}&daddr=${encodeURIComponent(r.name)}`;
-    const dirBtn = `<a class="btn small" href="${gm}" target="_blank" rel="noopener">Directions</a>`;
-    return `
-      <div class="popup">
-        <div class="popup-head" style="display:flex; align-items:center; gap:.4rem;">
-          <img src="${iconSrc}" alt="" width="20" height="20"/>
-          <h3 style="margin:.1rem 0 .2rem; font-size:1.05rem;">${r.name}</h3>
-        </div>
-        ${acts}
-        ${photo}
-        ${teaser}
-        <div style="display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.4rem">
-          <button class="btn small js-details" type="button" data-id="${r.id}">Details</button>
-          ${websiteBtn}
-          ${dirBtn}
-        </div>
-      </div>`;
-  }
+ function popupHTML(r){
+  const iconSrc = getIconPath(r.category, r.icon);
+
+  // Activities will be fitted after popup opens
+  const actsDataAttr = r.activities && r.activities.length
+    ? ` data-acts='${JSON.stringify(r.activities)}'`
+    : '';
+
+  const photo = r.photo
+    ? `<img src="${r.photo}" alt="${r.name}" loading="lazy" style="width:100%;border-radius:8px;margin:.4rem 0">`
+    : '';
+
+  const teaser = r.description ? truncateHTML(r.description, 240) : '<p><em>No description yet.</em></p>';
+  const websiteBtn = r.website ? `<a class="btn small" href="${r.website}" target="_blank" rel="noopener">Website</a>` : '';
+  const gm = `https://www.google.com/maps?q=${encodeURIComponent(r.lat+','+r.lon)}&daddr=${encodeURIComponent(r.name)}`;
+  const dirBtn = `<a class="btn small" href="${gm}" target="_blank" rel="noopener">Directions</a>`;
+
+  return `
+    <div class="popup">
+      <div class="popup-head" style="display:flex; align-items:center; gap:.4rem;">
+        <img src="${iconSrc}" alt="" width="20" height="20"/>
+        <h3 class="popup-title" style="margin:.1rem 0 .2rem; font-size:1.05rem;">${r.name}</h3>
+      </div>
+
+      ${ r.activities.length ? `<div class="acts"${actsDataAttr}></div>` : '' }
+
+      ${photo}
+      <div class="popup-desc">${teaser}</div>
+
+      <div style="display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.4rem">
+        <button class="btn small js-details" type="button" data-id="${r.id}">Details</button>
+        ${websiteBtn}
+        ${dirBtn}
+      </div>
+    </div>`;
+}
+
 
 // ----- Sidebar list items (desktop) -----
 function sidebarItemHTML(r){
@@ -468,7 +544,8 @@ function addRow(r){
   if (r.lat == null || r.lon == null) return;
 
   const m = L.marker([r.lat, r.lon], { icon: makeIcon(r.category, r.icon) })
-    .bindPopup(popupHTML(r));
+  .bindPopup(popupHTML(r), { maxWidth: 360, keepInView: true, autoPanPadding: [30, 30] });
+
 
   m.feature = { properties: r };
   cluster.addLayer(m);
@@ -497,6 +574,19 @@ function addRow(r){
     listEl.appendChild(li);
   }
 }
+
+// Fit activity chips inside popups when they open
+map.on('popupopen', (e) => {
+  const root = e?.popup?._contentNode || e?.popup?.getElement();
+  const acts = root?.querySelector('.acts[data-acts]');
+  if (acts) layoutActs(acts);
+});
+
+// Also re-fit popup acts on resize
+window.addEventListener('resize', () => {
+  document.querySelectorAll('.leaflet-popup .acts[data-acts]').forEach(el => layoutActs(el));
+}, { passive: true });
+
 
 function clearLayers(){
   cluster.clearLayers();

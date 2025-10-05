@@ -213,7 +213,36 @@ body{
   }
 }
 
+/* ========== Map Info Control (round "?" button) ========== */
+.map-info-ctl { margin: 6px 6px 0 0; } /* small offset from edges */
 
+.map-info-btn{
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  border: 2px solid var(--ink);
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,.18);
+  cursor: pointer;
+  transition: transform .06s ease, box-shadow .12s ease, filter .2s ease;
+}
+.map-info-btn:hover{ filter: brightness(1.06); box-shadow: 0 3px 8px rgba(0,0,0,.22); }
+.map-info-btn:active{ transform: translateY(1px); box-shadow: 0 2px 6px rgba(0,0,0,.18); }
+.map-info-btn svg{ display:block; }
+
+@media (prefers-reduced-motion: reduce){
+  .map-info-btn { transition: none; }
+}
+
+/* Keep the control above map tiles/overlays */
+.leaflet-control.map-info-ctl { z-index: 1200; }
+
+.map-info-btn{
+  background: linear-gradient(180deg,#ffffff,#fff6dd);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+}
 
 /* =========================
    Filters / Search
@@ -435,6 +464,22 @@ body{
 }
 .badge--icon > img { width: 100%; height: 100%; object-fit: contain; }
 
+/* Map marker badge (DivIcon) */
+.treasure-divicon { background: transparent; border: 0; }
+.treasure-pin{
+  width: 36px; height: 36px;
+  border: 2px solid var(--accent);
+  background: #fff;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  box-shadow: 0 1px 2px rgba(0,0,0,.15);
+}
+.treasure-pin img{
+  width: 20px; height: 20px;         /* smaller glyph so it never kisses the ring */
+  display: block; object-fit: contain;
+}
+
+
 /* =========================
    Interurban Trail styling
    ========================= */
@@ -449,35 +494,140 @@ body{
 /* =========================
    Static pages (About / Links)
    ========================= */
-#content{ padding:2rem 1.5rem 3rem; max-width:900px; margin:0 auto }
-#content h2{ font-family:"Archivo Black", system-ui; font-size:1.6rem; margin-bottom:.5rem; color:var(--accent) }
-#content p{ font-size:1.05rem; line-height:1.7; margin-bottom:1.25rem; color:var(--ink) }
-#content a{ color:var(--accent-3); font-weight:700; text-decoration:none }
-#content a:hover{ color:var(--accent); text-decoration:underline }
-.intro-section, .about-site{
-  background:#fff9ee; border:2px solid var(--line); border-radius:10px;
-  padding:1.5rem; margin-bottom:1.5rem; box-shadow:0 4px 0 rgba(0,0,0,.08);
+
+/* Page container */
+#content{
+  padding: 2rem 1.25rem 3rem;
+  max-width: 960px;
+  margin: 0 auto;
 }
 
-/* Links page grid (legacy) */
-.links-intro{ text-align:center; max-width:800px; margin:2rem auto 2rem; padding:0 1rem }
-.links-intro h2{ font-family:"Archivo Black", system-ui; color:var(--accent); font-size:1.8rem; margin-bottom:.5rem }
-.links-intro p{ font-size:1.05rem; line-height:1.7; color:var(--ink) }
+/* Headings */
+#content h1{
+  font-family:"Archivo Black", system-ui;
+  font-size: 1.85rem;
+  line-height: 1.2;
+  margin: 0 0 .65rem;
+  color: var(--ink);
+}
+#content h2{
+  font-family:"Archivo Black", system-ui;
+  font-size: 1.4rem;
+  line-height: 1.25;
+  margin: 0 0 .5rem;
+  color: var(--accent);
+}
+
+/* Body text & links */
+#content p{
+  font-size: 1.05rem;
+  line-height: 1.7;
+  margin: 0 0 1.1rem;
+  color: var(--ink);
+}
+#content a{
+  color: var(--accent-3);
+  font-weight: 700;
+  text-decoration: none;
+}
+#content a:hover{ color: var(--accent); text-decoration: underline; }
+
+/* Lede paragraph for the first section */
+.lede{
+  font-size: 1.12rem;
+  line-height: 1.75;
+  color: #2a342f;
+  margin-bottom: 1rem;
+}
+
+/* Card-like sections */
+.intro-section,
+.about-site,
+.about-howto {
+  background: #fff9ee;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  padding: 1.4rem 1.5rem;
+  margin: 0 auto 1.2rem;
+  box-shadow: 0 4px 0 rgba(0,0,0,.08);
+}
+
+/* Subtle accent bar at the top */
+.intro-section::before,
+.about-site::before,
+.about-howto::before{
+  content:"";
+  display:block;
+  height: 6px;
+  width: 84px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), #5fa561);
+  margin-bottom: .8rem;
+}
+
+/* Lists inside cards */
+#content ul{
+  margin: .25rem 0 1rem 1.2rem;
+  padding: 0;
+}
+#content li{ margin: .35rem 0; }
+
+/* Links page cards (kept, but tuned for consistency) */
+.links-intro{
+  text-align:center;
+  max-width:800px;
+  margin:2rem auto 1.5rem;
+  padding:0 1rem;
+}
+.links-intro h2{ color: var(--accent); font-size: 1.6rem; }
+.links-intro p{ color: var(--ink); }
+
 .links-grid{
-  display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));
-  gap:1.5rem; padding:0 1.5rem 2.5rem; max-width:1000px; margin:0 auto;
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));
+  gap:1.2rem;
+  padding: 0 0 2.2rem;
+  max-width:1000px;
+  margin:0 auto;
 }
 .link-card{
-  background:#fff9ee; border:2px solid var(--line); border-radius:10px;
-  padding:1.25rem 1.5rem; box-shadow:0 4px 0 rgba(0,0,0,.08);
+  background:#fff9ee;
+  border:2px solid var(--line);
+  border-radius:12px;
+  padding:1.1rem 1.25rem;
+  box-shadow:0 4px 0 rgba(0,0,0,.08);
   transition:transform .15s ease, box-shadow .15s ease;
 }
 .link-card:hover{ transform:translateY(-3px); box-shadow:0 6px 10px rgba(0,0,0,.12) }
-.link-card h3{ font-family:"Archivo Black", system-ui; color:var(--accent); font-size:1.3rem; margin-top:0 }
-.link-card ul{ list-style:none; margin:.5rem 0 0; padding:0 }
-.link-card li{ margin:.4rem 0 }
+.link-card h3{
+  font-family:"Archivo Black", system-ui;
+  color:var(--accent);
+  font-size:1.2rem;
+  margin:.1rem 0 .3rem;
+}
+.link-card ul{ list-style:none; margin:.35rem 0 0; padding:0 }
+.link-card li{ margin:.35rem 0 }
 .link-card a{ text-decoration:none; color:var(--accent-3); font-weight:600 }
 .link-card a:hover{ color:var(--accent); text-decoration:underline }
+
+/* Footer for static pages */
+.site-foot{
+  border-top: 2px solid var(--line);
+  background: #f6f1e4;
+  text-align: center;
+  padding: .9rem 1rem;
+  color: #3b463f;
+  font-size: .95rem;
+}
+
+/* Responsive tweaks */
+@media (max-width: 760px){
+  #content{ padding: 1.25rem 12px 2.25rem; }
+  #content h1{ font-size: 1.55rem; }
+  #content h2{ font-size: 1.25rem; }
+  .intro-section, .about-site, .about-howto{ padding: 1.1rem 1.1rem; }
+}
+
 
 /* =========================
    Mobile adjustments
@@ -654,3 +804,36 @@ body{
 .legend-embed .legend-row:focus-within{ background:#fff3d4; }
 .legend-embed .legend-row img{ width:20px; height:20px; display:block; }
 .legend-embed .legend-line{ display:inline-block; width:18px; height:3px; background:#2f7c31; border-radius:2px; }
+
+/* Drawer description: tidy paragraphs/line breaks */
+.drawer .desc p { margin: 0 0 1em; line-height: 1.6; }
+.drawer .desc br { line-height: 1.2; }
+
+/* Drawer activity chips: single line + '+N more' */
+.drawer .acts{
+  display:flex; align-items:center; gap:.35rem;
+  margin:.25rem 0 .5rem;
+  flex-wrap:nowrap; overflow:hidden;
+}
+.drawer .acts .chip{
+  display:inline-flex; align-items:center; white-space:nowrap;
+  padding:.18rem .5rem; border:1.5px solid var(--line);
+  border-radius:999px; background:#fff;
+  font-size:.85rem; line-height:1; color:var(--ink); font-weight:600;
+}
+.drawer .acts .more{
+  border:1.5px solid var(--ink); background:#f5f0df; font-weight:700;
+}
+
+/* 'More like this' pills (no bullets) */
+.morelike-wrap{ margin-top: .8rem; }
+.morelike{
+  display:flex; flex-wrap:wrap; gap:.35rem; padding:0; margin:.35rem 0 0;
+}
+.morelike .tag{
+  display:inline-flex; align-items:center; white-space:nowrap;
+  padding:.2rem .55rem; border:1.5px solid var(--line);
+  border-radius:999px; background:#fff;
+  font-size:.9rem; line-height:1.1; color:var(--ink);
+}
+.morelike .tag:hover{ background:#fff3d4; }
