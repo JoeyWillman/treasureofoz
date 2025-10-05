@@ -837,3 +837,21 @@ body{
   font-size:.9rem; line-height:1.1; color:var(--ink);
 }
 .morelike .tag:hover{ background:#fff3d4; }
+
+/* Trail popup uses the same visual system as other popups */
+.popup-desc p{ margin: 0 0 1em; line-height: 1.55; }
+
+/* Make popups comfortable on phones: not full-screen; content scrolls */
+@media (max-width: 760px){
+  .leaflet-popup-content-wrapper{
+    max-width: 320px;          /* align with JS maxWidth */
+  }
+  .leaflet-popup-content{
+    max-height: 55vh;          /* avoid covering the whole screen */
+    overflow: auto;            /* scroll inside the popup if long */
+  }
+  /* Bigger close button for touch */
+  .leaflet-popup-close-button{
+    width: 28px; height: 28px; line-height: 28px; font-size: 20px;
+  }
+}

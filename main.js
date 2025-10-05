@@ -375,18 +375,26 @@ function makeIcon(category, overridePath){
   map.getPane('trailPane').style.zIndex = 450;
   map.getPane('trailPane').style.pointerEvents = 'auto';
 
-  const TRAIL_POPUP_HTML = `
-    <div class="popup">
-      <h3 style="margin:.1rem 0 .4rem;font-size:1.1rem;color:#2f7c31;">Ozaukee Interurban Trail</h3>
+const TRAIL_POPUP_HTML = `
+  <div class="popup">
+    <div class="popup-head" style="display:flex;align-items:center;gap:.4rem;">
+      <span class="legend-line" style="display:inline-block;width:18px;height:3px;background:#2f7c31;border-radius:2px"></span>
+      <h3 class="popup-title" style="margin:.1rem 0 .2rem;font-size:1.05rem;">Ozaukee Interurban Trail</h3>
+    </div>
+
+    <div class="popup-desc">
       <p>The Ozaukee Interurban Trail was not always a trail, but the route of the Interurban Electric Railway. It opened in 1908 and ran from Milwaukee to Sheboygan. The Northern Route had stops in the mostly rural communities of Brown Deer, Thiensville, Cedarburg, Grafton, Port Washington, Belgium, Cedar Grove, Oostburg, and Sheboygan. Until it ceased operation completely in 1951, many people leaving the city for work or play traveled on the railway.</p>
       <p>Workers used the railway to access factory jobs, making cigars, shoes, nails, and pearl buttons. Perhaps the most famous “commuters” were the African American blues singers who traveled north in the 1920s and 30s to use the recording studio in the Grafton chair factory, which eventually became Paramount Records.</p>
       <p>After the railway ceased operation, the land was retained, and the company, by that time called Wisconsin Electric (now We Energies), began to convert parts of the trail into bike paths in 1975—an easy conversion because the trail was built on old railroad beds. In 1998, Ozaukee County and several of its communities received state funding to lease the land from Wisconsin Electric and complete what is now known as the Ozaukee Interurban Trail.</p>
-      <p>
-        <a class="btn small" href="https://www.interurbantrail.com/" target="_blank" rel="noopener">Official Website</a>
-        <a class="btn small" href="https://joeywillman.github.io/ozaukee-interurbantrail-birding/" target="_blank" rel="noopener">Trailside Birding Guide</a>
-      </p>
     </div>
-  `;
+
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.4rem">
+      <a class="btn small" href="https://www.interurbantrail.com/" target="_blank" rel="noopener">Official Website</a>
+      <a class="btn small" href="https://joeywillman.github.io/ozaukee-interurbantrail-birding/" target="_blank" rel="noopener">Trailside Birding Guide</a>
+    </div>
+  </div>
+`;
+
 
   const trailStyle = {
     color: '#2f7c31',
@@ -403,7 +411,17 @@ function makeIcon(category, overridePath){
         pane: 'trailPane',
         style: trailStyle,
         onEachFeature: (_, layer) => {
-          layer.bindPopup(TRAIL_POPUP_HTML, { maxWidth: 420 });
+          const small = window.matchMedia('(max-width: 760px)').matches;
+layer.bindPopup(TRAIL_POPUP_HTML, {
+  maxWidth: small ? 300 : 360, // keeps it compact on phones
+  keepInView: true,
+  autoPan: true,
+  // keep the popup clear of the sticky header on small screens
+  autoPanPaddingTopLeft: [16, small ? 90 : 30],
+  autoPanPaddingBottomRight: [16, 16],
+  closeButton: true
+});
+
           layer.setStyle({ className: 'trail-line' }); // animated dashed line via CSS
         }
       }).addTo(map);
