@@ -18,6 +18,26 @@ document.addEventListener('DOMContentLoaded', () => {
   requestAnimationFrame(()=> map.invalidateSize());
   window.addEventListener('resize', ()=> map.invalidateSize());
 
+  // Create an info button as a Leaflet control (top-right, like zoom)
+const InfoControl = L.Control.extend({
+  options: { position: 'topright' },
+  onAdd: function () {
+    const btn = L.DomUtil.create('button', 'map-info leaflet-bar');
+    btn.id = 'mapInfoBtn';
+    btn.type = 'button';
+    btn.setAttribute('aria-label', 'How to use this map');
+    btn.textContent = '?';
+
+    // Prevent the map from panning/zooming when user interacts with the button
+    L.DomEvent.disableClickPropagation(btn);
+    L.DomEvent.disableScrollPropagation(btn);
+
+    return btn;
+  }
+});
+map.addControl(new InfoControl());
+
+
   // ----- UI elements -----
   const $ = id => document.getElementById(id);
   const menuBtn = $('menuBtn');
@@ -40,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Pick the active control (mobile has priority if present)
   const pickEl = (mEl, dEl) => mEl || dEl;
 
-  // Unified handles used throughout
+  // Unified handles used throughout (kept for convenience)
   const searchInput = pickEl(mSearch, dSearch);
   const typeSelect  = pickEl(mType,   dType);
   const locSelect   = pickEl(mLoc,    dLoc);
@@ -64,6 +84,57 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(()=> map.invalidateSize(), 250);
     });
   }
+// ===== Map Info Modal (legend + tutorial) =====
+(function(){
+  const btn     = document.getElementById('mapInfoBtn');
+  const modal   = document.getElementById('info-modal');
+  const embed   = document.getElementById('legendEmbed');
+  const closeEl = modal?.querySelector('.modal-close');
+
+  if (!btn || !modal || !embed) return;
+
+  const cloneLegendInto = () => {
+    const src = document.getElementById('legend');
+    if (!src) return;
+
+    // Grab just the list markup so we don't inherit floating card classes/IDs
+    const list = src.querySelector('.legend-list')?.cloneNode(true);
+    const title = document.createElement('div');
+    title.className = 'legend-title';
+    title.textContent = 'Legend';
+
+    const wrap = document.createElement('div');
+    wrap.className = 'legend-embed'; // NOTE: not ".legend"
+    wrap.appendChild(title);
+    if (list) wrap.appendChild(list);
+
+    embed.innerHTML = '';
+    embed.appendChild(wrap);
+  };
+
+  let lastFocus = null;
+
+  const openModal = () => {
+    cloneLegendInto();
+    lastFocus = document.activeElement;
+    modal.setAttribute('aria-hidden', 'false');
+    (modal.querySelector('button, [href], [tabindex]:not([tabindex="-1"])') || closeEl)?.focus();
+  };
+
+  const closeModal = () => {
+    modal.setAttribute('aria-hidden', 'true');
+    lastFocus?.focus?.();
+  };
+
+  btn.addEventListener('click', openModal);
+  closeEl?.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e)=>{
+    if (e.target.matches('[data-close="true"]')) closeModal();
+  });
+  document.addEventListener('keydown', (e)=>{
+    if (modal.getAttribute('aria-hidden') === 'false' && e.key === 'Escape') closeModal();
+  });
+})();
 
   // ----- Clustering -----
   const cluster = L.markerClusterGroup({
@@ -83,6 +154,15 @@ document.addEventListener('DOMContentLoaded', () => {
   function slugify(str){ return String(str||'').toLowerCase().trim().replace(/&/g,'and').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); }
   function uniq(arr){ return Array.from(new Set(arr.filter(Boolean))); }
   const setValueBoth = (mEl, dEl, v) => { if (mEl) mEl.value = v; if (dEl) dEl.value = v; };
+
+  // Debounce helper (for search typing)
+  const debounce = (fn, ms=160) => { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; };
+
+  // Safe HTML (uses DOMPurify if present; otherwise text-only fallback)
+  const safeHTML = (html) => {
+    if (window.DOMPurify?.sanitize) return window.DOMPurify.sanitize(html || '');
+    const d = document.createElement('div'); d.textContent = String(html || ''); return d.innerHTML;
+  };
 
   const CATEGORY_MAP = {
     'naturepreserve': 'naturepreserve', 'preserve': 'naturepreserve', 'natural-area': 'naturepreserve',
@@ -107,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!html) return '';
     const tmp = document.createElement('div'); tmp.innerHTML = html;
     const text = tmp.textContent || tmp.innerText || '';
-    if (text.length <= maxChars) return html;
+    if (text.length <= maxChars) return `<p>${text}</p>`;
     const short = text.slice(0, maxChars).replace(/\s+\S*$/, '') + '…';
     return `<p>${short}</p>`;
   }
@@ -122,9 +202,22 @@ document.addEventListener('DOMContentLoaded', () => {
   // Drawer
   const drawer = $('detail-drawer');
   const drawerBody = $('drawerBody');
-  document.addEventListener('click', (e)=>{
-    if (e.target.closest('.drawer-close')) drawer.setAttribute('aria-hidden', 'true');
+
+  // Drawer a11y: Esc to close + focus on open
+  const closeDrawer = () => drawer.setAttribute('aria-hidden', 'true');
+  const openDrawerA11y = () => {
+    drawer.setAttribute('aria-hidden', 'false');
+    const focusable = drawer.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    focusable?.focus();
+  };
+
+  document.addEventListener('keydown', (e)=>{
+    if (drawer.getAttribute('aria-hidden') === 'false' && e.key === 'Escape') closeDrawer();
   });
+  document.addEventListener('click', (e)=>{
+    if (e.target.closest('.drawer-close')) closeDrawer();
+  });
+
   function directionsBtn(r){
     const gm = `https://www.google.com/maps?q=${encodeURIComponent(r.lat+','+r.lon)}&daddr=${encodeURIComponent(r.name)}`;
     return `<a class="btn" href="${gm}" target="_blank" rel="noopener">Directions</a>`;
@@ -140,14 +233,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!b) return;
     const lat = parseFloat(b.getAttribute('data-lat'));
     const lon = parseFloat(b.getAttribute('data-lon'));
-    drawer.setAttribute('aria-hidden', 'true');
+    closeDrawer();
     map.setView([lat, lon], Math.max(map.getZoom(), 14));
   });
 
   function openDetails(r){
     const website = r.website ? `<a class="btn" href="${r.website}" target="_blank" rel="noopener">Website ↗</a>` : '';
     const address = r.address ? `<span class="chip"><strong>Address:</strong> ${r.address}</span>` : '';
-    const photo = r.photo ? `<img src="${r.photo}" alt="${r.name}" style="margin:.6rem 0">` : '';
+    const photo = r.photo ? `<img src="${r.photo}" alt="${r.name}" loading="lazy" style="margin:.6rem 0">` : '';
     const actChips = r.activities.length ? `<div class="chips chip-row">${r.activities.map(a=>`<span class="chip">${a}</span>`).join('')}</div>` : '';
 
     drawerBody.innerHTML = `
@@ -158,7 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
       ${actChips}
       ${photo}
-      ${r.description || '<p><em>No description yet.</em></p>'}
+      ${safeHTML(r.description) || '<p><em>No description yet.</em></p>'}
       <div class="meta-row">
         ${address || ''}
         ${website || ''}
@@ -166,7 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
       ${suggestSimilar(r)}
     `;
-    drawer.setAttribute('aria-hidden', 'false');
+    openDrawerA11y();
   }
 
   // Normalize row from CSV (use LOCATION + ACTIVITIES only from CSV)
@@ -258,7 +351,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function popupHTML(r){
     const iconSrc = getIconPath(r.category, r.icon);
     const acts = r.activities.length ? `<div class="chips chip-row">${r.activities.map(a=>`<span class="chip">${a}</span>`).join('')}</div>` : '';
-    const photo = r.photo ? `<img src="${r.photo}" alt="${r.name}" style="width:100%;border-radius:8px;margin:.4rem 0">` : '';
+    const photo = r.photo ? `<img src="${r.photo}" alt="${r.name}" loading="lazy" style="width:100%;border-radius:8px;margin:.4rem 0">` : '';
     const teaser = r.description ? truncateHTML(r.description, 240) : '<p><em>No description yet.</em></p>';
     const websiteBtn = r.website ? `<a class="btn small" href="${r.website}" target="_blank" rel="noopener">Website</a>` : '';
     const gm = `https://www.google.com/maps?q=${encodeURIComponent(r.lat+','+r.lon)}&daddr=${encodeURIComponent(r.name)}`;
@@ -266,7 +359,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return `
       <div class="popup">
         <div class="popup-head" style="display:flex; align-items:center; gap:.4rem;">
-          <img src="${iconSrc}" alt="icon" width="20" height="20"/>
+          <img src="${iconSrc}" alt="" width="20" height="20"/>
           <h3 style="margin:.1rem 0 .2rem; font-size:1.05rem;">${r.name}</h3>
         </div>
         ${acts}
@@ -280,56 +373,164 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>`;
   }
 
-  // ----- Sidebar list items (desktop) -----
-  function sidebarItemHTML(r){
-    const iconSrc = getIconPath(r.category, r.icon);
-    const sub = r.description ? firstSentence(r.description) : (r.address || r.location || r.category || '');
-    const maxShow = 3;
-    const shown = r.activities.slice(0, maxShow);
-    const hiddenCount = Math.max(0, r.activities.length - shown.length);
-    const acts = shown.map(a => `<span class="chip">${a}</span>`).join('');
-    const more = hiddenCount ? `<span class="chip more">+${hiddenCount} more</span>` : '';
-    return `
-      <img src="${iconSrc}" alt="icon">
-      <div class="meta">
-        <span class="title">${r.name}</span>
-        <span class="sub">${sub}</span>
-        ${ r.activities.length ? `<div class="acts">${acts}${more}</div>` : '' }
-      </div>
-    `;
+// ----- Sidebar list items (desktop) -----
+function sidebarItemHTML(r){
+  const iconSrc = getIconPath(r.category, r.icon);
+
+  // Show town/location only (fall back to address, then category)
+  const sub = r.location || r.address || (r.category || '');
+
+  // We'll fit chips dynamically after insert; store full activities on the node
+  const actsDataAttr = r.activities && r.activities.length
+    ? ` data-acts='${JSON.stringify(r.activities)}'`
+    : '';
+
+  return `
+    <img src="${iconSrc}" alt="">
+    <div class="meta">
+      <span class="title">${r.name}</span>
+      <span class="sub">${sub}</span>
+      ${ r.activities.length ? `<div class="acts"${actsDataAttr}></div>` : '' }
+    </div>
+  `;
+}
+
+/**
+ * Fit activity chips into one line:
+ * - Append as many activity chips as will fit within the container width
+ * - If there are hidden ones, append a "+N more" chip that ALWAYS fits
+ */
+function layoutActs(container){
+  if (!container) return;
+  let acts = [];
+  try {
+    acts = JSON.parse(container.getAttribute('data-acts') || '[]');
+  } catch (_) {
+    acts = [];
   }
+  container.innerHTML = '';
+  if (!acts.length) return;
 
-  function addRow(r){
-    if (r.lat == null || r.lon == null) return;
+  const makeChip = (label, cls='') => {
+    const el = document.createElement('span');
+    el.className = 'chip' + (cls ? (' ' + cls) : '');
+    el.textContent = label;
+    return el;
+  };
 
-    const m = L.marker([r.lat, r.lon], { icon: makeIcon(r.category, r.icon) })
-      .bindPopup(popupHTML(r));
+  // We'll try increasing counts until the next candidate overflows.
+  let bestCount = 0;
 
-    m.feature = { properties: r };
-    cluster.addLayer(m);
-    markers.push(m);
-    markerById.set(r.id, m);
+  for (let i = 0; i < acts.length; i++) {
+    // Build a trial DOM for i+1 visible chips (+ optional more chip)
+    container.innerHTML = '';
 
-    if (listEl) {
-      const li = document.createElement('li');
-      li.className = 'card';
-      li.innerHTML = sidebarItemHTML(r);
-      li.addEventListener('click', ()=>{
-        map.setView([r.lat, r.lon], Math.max(map.getZoom(), 14));
-        m.openPopup();
-        if (sidebar) sidebar.classList.remove('open');
-        setTimeout(()=> map.invalidateSize(), 150);
-      });
-      listEl.appendChild(li);
+    // Visible chips
+    for (let j = 0; j <= i; j++) {
+      container.appendChild(makeChip(acts[j]));
+    }
+
+    // If there are hidden chips, append a "+N more" chip for measurement
+    const hidden = acts.length - (i + 1);
+    if (hidden > 0) {
+      container.appendChild(makeChip(`+${hidden} more`, 'more'));
+    }
+
+    // Check overflow
+    if (container.scrollWidth <= container.clientWidth) {
+      bestCount = i + 1;
+    } else {
+      break;
     }
   }
 
-  function clearLayers(){
-    cluster.clearLayers();
-    markers = [];
-    markerById.clear();
-    if (listEl) listEl.innerHTML = '';
+  // Render final content using the bestCount found
+  container.innerHTML = '';
+  if (bestCount === 0) {
+    // If even the first chip + "+N more" doesn't fit, just show "+N more"
+    container.appendChild(makeChip(`+${acts.length} more`, 'more'));
+    return;
   }
+
+  // Visible chips
+  for (let j = 0; j < bestCount; j++) {
+    container.appendChild(makeChip(acts[j]));
+  }
+
+  // If there are hidden ones, append "+N more"
+  const hiddenFinal = acts.length - bestCount;
+  if (hiddenFinal > 0) {
+    container.appendChild(makeChip(`+${hiddenFinal} more`, 'more'));
+  }
+}
+
+function addRow(r){
+  if (r.lat == null || r.lon == null) return;
+
+  const m = L.marker([r.lat, r.lon], { icon: makeIcon(r.category, r.icon) })
+    .bindPopup(popupHTML(r));
+
+  m.feature = { properties: r };
+  cluster.addLayer(m);
+  markers.push(m);
+  markerById.set(r.id, m);
+
+  if (listEl) {
+    const li = document.createElement('li');
+    li.className = 'card';
+    li.innerHTML = sidebarItemHTML(r);
+
+    // Fit the activity chips after we’re in the DOM (so widths are known)
+    const actsEl = li.querySelector('.acts');
+    if (actsEl) {
+      // Wait a tick to ensure fonts/layout are ready
+      requestAnimationFrame(() => layoutActs(actsEl));
+    }
+
+    li.addEventListener('click', ()=>{
+      map.setView([r.lat, r.lon], Math.max(map.getZoom(), 14));
+      m.openPopup();
+      if (sidebar) sidebar.classList.remove('open');
+      setTimeout(()=> map.invalidateSize(), 150);
+    });
+
+    listEl.appendChild(li);
+  }
+}
+
+function clearLayers(){
+  cluster.clearLayers();
+  markers = [];
+  markerById.clear();
+  if (listEl) listEl.innerHTML = '';
+}
+
+// Friendly empty state in the list when no matches
+function renderEmpty(){
+  if (!listEl) return;
+  const li = document.createElement('li');
+  li.className = 'card';
+  li.innerHTML = `
+    <div class="meta">
+      <span class="title">No matches</span>
+      <span class="sub">Try clearing a filter or using fewer terms.</span>
+    </div>`;
+  listEl.appendChild(li);
+}
+
+/* Re-fit all visible activity chip rows on resize or after fonts load */
+const relayoutAllActs = (() => {
+  let t;
+  const run = () => {
+    if (!listEl) return;
+    const rows = listEl.querySelectorAll('.acts[data-acts]');
+    rows.forEach(el => layoutActs(el));
+  };
+  return () => { clearTimeout(t); t = setTimeout(run, 100); };
+})();
+
+window.addEventListener('resize', relayoutAllActs, { passive: true });
+if (document.fonts?.ready) document.fonts.ready.then(relayoutAllActs);
 
   // ----- Filters -----
   function buildFilterOptions(data){
@@ -369,6 +570,14 @@ document.addEventListener('DOMContentLoaded', () => {
       return matchesType && matchesLoc && matchesAct && matchesQ;
     });
 
+    if (!filtered.length){
+      renderEmpty();
+      map.setView([43.38, -87.95], 11);
+      renderChips({q, t, loc, act, count: 0});
+      setTimeout(()=> map.invalidateSize(), 50);
+      return;
+    }
+
     filtered.forEach(addRow);
 
     if (filtered.length && markers.length){
@@ -400,11 +609,12 @@ document.addEventListener('DOMContentLoaded', () => {
     make(`${count} result${count===1?'':'s'}`, ()=>{});
   }
 
-  // Auto-refresh on input/changes (bind to unified controls)
-  if (searchInput) searchInput.addEventListener('input',  applyFilters);
-  if (typeSelect)  typeSelect.addEventListener('change',  applyFilters);
-  if (locSelect)   locSelect.addEventListener('change',   applyFilters);
-  if (actSelect)   actSelect.addEventListener('change',   applyFilters);
+  // Auto-refresh on input/changes — attach to BOTH desktop and mobile
+  const onSearch = debounce(applyFilters, 160);
+  [dSearch, mSearch].filter(Boolean).forEach(el => el.addEventListener('input', onSearch));
+  [dType,  mType ].filter(Boolean).forEach(el => el.addEventListener('change', applyFilters));
+  [dLoc,   mLoc  ].filter(Boolean).forEach(el => el.addEventListener('change', applyFilters));
+  [dAct,   mAct  ].filter(Boolean).forEach(el => el.addEventListener('change', applyFilters));
 
   // Details button (from popup)
   document.addEventListener('click', (e)=>{

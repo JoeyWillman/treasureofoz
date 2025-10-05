@@ -13,6 +13,7 @@
   /* Layout tokens (tweak if header/footer change) */
   --hdr: 88px;   /* desktop header height (logo + padding) */
   --ftr: 48px;   /* footer height */
+  --mobf: 64px;  /* default mobile filter bar height fallback */
 }
 
 *{ box-sizing:border-box }
@@ -24,6 +25,20 @@ body{
   font-family:"Work Sans", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 }
 
+/* Strong, consistent focus ring */
+:where(a, button, [role="button"], input, select).focus-visible,
+:where(.nav-item, .btn, .chip).focus-visible {
+  outline: 3px solid #3b7fca;
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .trail-line { animation: none; filter: none; }
+  #sidebar { transition: none; }
+}
+
 /* =========================
    Header & Nav
    ========================= */
@@ -33,10 +48,34 @@ body{
   border-bottom:2px solid var(--line);
   background:linear-gradient(180deg,#fff8ea, #f6f1e4);
   position:sticky; top:0; z-index:40;
+  gap:1rem; /* allow space between brand and nav */
 }
-#site-header .brand{ display:flex; align-items:center; gap:.75rem }
-#site-header .brand h1{ font-family:"Archivo Black", system-ui; font-size:1.35rem; margin:.1rem 0 0 }
-#site-header .tag{ margin:.15rem 0 0; font-weight:600; letter-spacing:.02em; color:#3b463f }
+
+/* Brand: keep text to the right of the logo (not underneath) */
+#site-header .brand{
+  display:flex; align-items:center; gap:.75rem;
+  flex-wrap:nowrap;    /* prevent title from wrapping under the logo */
+  min-width:0;         /* allow truncation instead of wrapping */
+  flex:1 1 auto;       /* let brand claim space; nav hugs right */
+}
+
+/* Optional logo-only link wrapper (if used in HTML) */
+.brand-logo{ display:inline-block; line-height:0; }
+
+/* Title + tagline: not links, sit beside logo, allow truncation */
+.brand-text{ display:flex; flex-direction:column; min-width:0 }
+#site-header .brand h1,
+.site-title{
+  font-family:"Archivo Black", system-ui;
+  font-size:1.35rem; margin:.1rem 0 0; color:var(--ink);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  text-decoration:none; /* avoid underlines if inherited */
+}
+#site-header .tag{
+  margin:.15rem 0 0; font-weight:600; letter-spacing:.02em; color:#3b463f;
+  text-decoration:none;
+}
+
 .badge{ display:inline-block; font-weight:800; letter-spacing:.08em; background:var(--accent); color:#fff; padding:.15rem .45rem; border-radius:.35rem; margin-right:.5rem; box-shadow:0 2px 0 rgba(0,0,0,.12) }
 
 .logo{
@@ -47,24 +86,46 @@ body{
 }
 .logo:hover{ transform:scale(1.06); box-shadow:0 3px 6px rgba(0,0,0,.25) }
 
-.brand-text{ display:flex; flex-direction:column }
-
-.nav-links{ display:flex; align-items:center; gap:1rem }
+/* Nav: a bit more "parks & rec" button polish */
+.nav-links{ display:flex; align-items:center; gap:.6rem; flex:0 0 auto }
 .nav-item{
-  text-decoration:none; color:var(--ink); font-weight:700;
-  border:2px solid var(--ink); border-radius:.4rem;
-  padding:.35rem .75rem; background:#fff; transition:.2s;
+  text-decoration:none; color:var(--ink); font-weight:800;
+  border:2px solid var(--ink); border-radius:.6rem;
+  padding:.4rem .8rem;
+  background:linear-gradient(180deg,#ffffff,#fff6dd);
+  box-shadow:0 2px 0 rgba(0,0,0,.15);
+  transition:transform .08s ease, box-shadow .08s ease, background .2s ease, color .2s ease;
 }
-.nav-item:hover{ background:var(--accent); color:#fff }
-.nav-item.active{ background:var(--accent); color:#fff; box-shadow:0 2px 0 rgba(0,0,0,.2) }
+.nav-item:hover{
+  background:linear-gradient(180deg,#f4ffe9,#e3f9d9);
+  color:#0f1a16;
+}
+.nav-item:active{ transform:translateY(1px); box-shadow:0 1px 0 rgba(0,0,0,.15) }
+.nav-item.active{
+  background:linear-gradient(180deg, var(--accent), #226823);
+  color:#fff;
+  border-color:#0f1a16;
+  box-shadow:0 2px 0 rgba(0,0,0,.2);
+}
 
 /* Buttons & chips */
-.btn{ display:inline-flex; align-items:center; gap:.35rem; padding:.45rem .6rem; border:2px solid var(--ink); background:#fff; border-radius:.5rem; font-weight:700; cursor:pointer; text-decoration:none; color:inherit }
-.btn.small{ padding:.3rem .5rem; font-size:.9rem }
+.btn{
+  display:inline-flex; align-items:center; gap:.35rem; padding:.45rem .6rem;
+  border:2px solid var(--ink); background:#fff; border-radius:.5rem;
+  font-weight:700; cursor:pointer; text-decoration:none; color:inherit;
+  min-height:40px; /* touch-friendly */
+}
+.btn.small{ padding:.3rem .5rem; font-size:.9rem; min-height:32px }
 .btn:hover{ background:#fff3d4 }
+.btn:active{ transform:translateY(1px); box-shadow:none }
+
 .chips{ display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.6rem }
-.chip{ padding:.2rem .5rem; border:1.5px dashed var(--accent); border-radius:999px; font-size:.85rem; background:#fff }
+.chip{
+  padding:.2rem .5rem; border:1.5px dashed var(--accent); border-radius:999px;
+  font-size:.85rem; background:#fff; cursor:pointer; min-height:40px;
+}
 .chip.muted{ opacity:.7 }
+.chip:active{ transform:translateY(1px); box-shadow:none }
 
 /* =========================
    Main Layout (Header-fixed)
@@ -91,38 +152,161 @@ body{
 #map{ position:absolute; inset:0; min-height:0 }
 
 /* =========================
+   Map Info Modal
+   ========================= */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: none;
+}
+.modal[aria-hidden="false"] { display: block; }
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.35);
+  backdrop-filter: blur(1px);
+}
+
+.modal-card {
+  position: relative;
+  max-width: 560px;
+  margin: 8vh auto;
+  background: #fff;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: 0 12px 36px rgba(0,0,0,.25);
+  padding: 1rem 1rem 1.1rem;
+}
+
+.modal-close {
+  position: absolute;
+  top: .5rem; right: .5rem;
+  border: 2px solid var(--ink);
+  background: #fff;
+  border-radius: 8px;
+  padding: .25rem .5rem;
+  cursor: pointer;
+}
+
+.modal-body {
+  max-height: 70vh;
+  overflow: auto;
+}
+
+/* Reuse legend look inside modal without floating styles */
+#legendEmbed .legend {
+  position: static;
+  border: none;
+  padding: 0;
+  box-shadow: none;
+  border-radius: 0;
+}
+#legendEmbed .legend-list { margin-top: .25rem; }
+
+/* Mobile comfort */
+@media (max-width: 760px){
+  .modal-card {
+    margin: 10vh 12px;
+    max-width: none;
+  }
+}
+
+
+
+/* =========================
    Filters / Search
    ========================= */
 .search-row{ display:flex; flex-wrap:wrap; gap:.5rem }
 #search{
   flex:1 1 180px; min-width:160px;
   padding:.5rem .6rem; border:2px solid var(--ink); border-radius:.4rem;
+  font-size:1rem; line-height:1.2;
 }
 #filterType, #filterLocation, #filterActivity{
   flex:1 1 140px; min-width:130px; max-width:180px;
   padding:.5rem .6rem; border:2px solid var(--ink); border-radius:.4rem; background:#fff;
+  font-size:1rem; line-height:1.2;
 }
+::placeholder { color: rgba(23,33,29,.65); }
 
 /* =========================
    List items
    ========================= */
-.card{
-  display:flex; gap:.6rem; align-items:flex-start;
-  padding:.7rem .75rem; border-bottom:1px solid var(--line);
-  cursor:pointer;
+.card {
+  display: flex;
+  gap: .6rem;
+  align-items: flex-start;
+  padding: .7rem .75rem;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
 }
-.card:hover{ background:#fff3d4 }
-#sidebar .card img{
-  width:28px; height:28px; display:block; object-fit:contain;
-  background:var(--bg); border:2px solid var(--accent); border-radius:50%;
-  padding:4px; box-sizing:content-box;
+.card:hover { background: #fff3d4; }
+
+#sidebar .card img {
+  width: 28px;
+  height: 28px;
+  display: block;
+  object-fit: contain;
+  background: var(--bg);
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  padding: 4px;
+  box-sizing: content-box;
 }
-.card .meta{ display:flex; flex-direction:column; flex:1; min-width:0 }
-.card .title{ font-weight:700 }
-.card .sub{ font-size:.86rem; opacity:.75; max-width:46ch; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
-.card .acts{ display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.25rem }
-.card .acts .chip{ padding:.15rem .45rem; font-size:.78rem }
-.card .acts .more{ background:#fff; border-style:solid }
+
+.card .meta {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.card .title {
+  font-weight: 700;
+}
+
+.card .sub {
+  font-size: .86rem;
+  opacity: .75;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ink);
+}
+
+/* --- Activity chips cleanup --- */
+.card .acts {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  margin-top: .25rem;
+  flex-wrap: nowrap;         /* keep them on one line */
+  overflow: hidden;          /* hide overflow if too many */
+}
+
+.card .acts .chip {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  padding: .18rem .5rem;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  font-size: .78rem;
+  line-height: 1;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.card .acts .more {
+  border: 1.5px solid var(--ink);
+  background: #f5f0df;
+  font-weight: 700;
+  color: var(--ink);
+}
+
 
 /* =========================
    Drawer (Details)
@@ -131,7 +315,7 @@ body{
   position:absolute; right:12px; bottom:12px; top:12px; width:min(460px, 94vw);
   background:#fff; border:2px solid var(--ink); border-radius:12px; box-shadow:0 12px 36px rgba(0,0,0,.2);
   transform:translateY(12px) scale(.98); opacity:0; pointer-events:none; transition:.18s ease;
-  display:flex; flex-direction:column; z-index:400;
+  display:flex; flex-direction:column; z-index:900; /* above legend & controls */
 }
 .drawer[aria-hidden="false"]{ transform:none; opacity:1; pointer-events:auto }
 .drawer-close{ align-self:flex-end; margin:.6rem; border:2px solid var(--ink); background:#fff; border-radius:8px; padding:.25rem .5rem; cursor:pointer }
@@ -148,19 +332,74 @@ body{
    ========================= */
 .legend{
   position:absolute; bottom:12px; left:12px;
-  background:#fff; border:2px solid var(--ink); border-radius:.6rem;
-  padding:.5rem .6rem; box-shadow:0 4px 0 rgba(0,0,0,.12);
+  background:#fff;
+  border:2px solid var(--ink);
+  border-radius:12px;
+  padding:.6rem .7rem;
+  box-shadow:0 4px 0 rgba(0,0,0,.12);
   z-index:700; pointer-events:auto;
+  max-width: 240px;  /* keeps it tidy */
 }
-.legend-title{ font-weight:800; margin-bottom:.35rem }
-.legend-row{ display:flex; align-items:center; gap:.4rem; margin:.15rem 0 }
-.legend-row img{ width:18px; height:18px; display:block }
+
+.legend-title{
+  font-family:"Archivo Black", system-ui;
+  font-size:1rem;
+  line-height:1.1;
+  margin:0 0 .45rem;
+  color:var(--ink);
+}
+
+/* remove bullets and lay items out with consistent gaps */
+.legend-list{
+  list-style:none;
+  padding:0;
+  margin:0;
+  display:flex;
+  flex-direction:column;
+  gap:.2rem;
+}
+
+/* each row is a small pill with better hit area */
+.legend-row{
+  display:flex;
+  align-items:center;
+  gap:.55rem;
+  padding:.22rem .35rem;
+  border-radius:8px;
+}
+.legend-row:hover,
+.legend-row:focus-within{ background:#fff3d4 }
+
+.legend-row img{
+  width:20px; height:20px; display:block;
+}
+
+.legend-line{
+  display:inline-block; width:18px; height:3px;
+  background:#2f7c31; border-radius:2px;
+}
+
+/* Hide the floating map legend on mobile (we’ll show it in the info modal) */
+@media (max-width: 760px){
+  #legend { display:none; } /* hide only the floating legend */
+}
+
 
 /* =========================
    Footer
    ========================= */
 #site-footer{ padding:.6rem 1rem; border-top:2px solid var(--line); font-size:.9rem }
 #site-footer a{ color:inherit }
+
+/* Footer for static pages (About/Links) */
+.site-foot{
+  padding: .8rem 1rem;
+  border-top:2px solid var(--line);
+  font-size:.95rem;
+  text-align:center;
+  background:#fff9ee;
+}
+.site-foot a{ color:inherit; }
 
 /* =========================
    Leaflet tweaks
@@ -188,6 +427,14 @@ body{
   box-sizing:content-box;
 }
 
+/* Optional shared badge sizing for icon badges elsewhere */
+.badge--icon {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: #fff; border: 2px solid var(--accent);
+  display: grid; place-items: center; padding: 6px;
+}
+.badge--icon > img { width: 100%; height: 100%; object-fit: contain; }
+
 /* =========================
    Interurban Trail styling
    ========================= */
@@ -212,7 +459,7 @@ body{
   padding:1.5rem; margin-bottom:1.5rem; box-shadow:0 4px 0 rgba(0,0,0,.08);
 }
 
-/* Links page grid */
+/* Links page grid (legacy) */
 .links-intro{ text-align:center; max-width:800px; margin:2rem auto 2rem; padding:0 1rem }
 .links-intro h2{ font-family:"Archivo Black", system-ui; color:var(--accent); font-size:1.8rem; margin-bottom:.5rem }
 .links-intro p{ font-size:1.05rem; line-height:1.7; color:var(--ink) }
@@ -269,6 +516,13 @@ body{
   }
   #search{ grid-column:1 / -1 }
   #filterType,#filterLocation,#filterActivity{ width:100%; max-width:none }
+
+  /* Drawer mobile comfort */
+  .drawer {
+    right: 8px; left: 8px; width: auto; bottom: 8px; top: auto;
+    max-height: 70vh;
+  }
+  .drawer-body { padding: .85rem; }
 }
 
 /* ===== Mobile-only filter bar ===== */
@@ -277,12 +531,12 @@ body{
 }
 
 @media (max-width: 760px){
-  /* Show the mobile filter bar, hide the sidebar/list. */
+  /* Show the mobile filter bar, hide the desktop sidebar/list. */
   .filters-mobile{
     display:block;
     position:sticky;
     top:var(--hdr, 72px);
-    z-index:35;
+    z-index:350;
     background:linear-gradient(180deg,#fff8ea,#f6f1e4);
     border-bottom:2px solid var(--line);
   }
@@ -298,7 +552,7 @@ body{
   #mSearch,
   #mFilterType,#mFilterLocation,#mFilterActivity{
     padding:.5rem .6rem; border:2px solid var(--ink); border-radius:.4rem; background:#fff;
-    min-width:0;
+    min-width:0; font-size:1rem; line-height:1.2;
   }
 
   /* One-column layout, hide the desktop sidebar entirely */
@@ -309,3 +563,94 @@ body{
   #map-wrap{ height: 100%; }
   .legend{ left:8px; bottom:8px }
 }
+
+/* =========================
+   Shared utility elements (new)
+   ========================= */
+
+/* Skip link for keyboard navigation */
+.skip-link {
+  position: absolute;
+  left: -999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+.skip-link:focus {
+  left: 0;
+  top: 0;
+  width: auto;
+  height: auto;
+  padding: .5rem 1rem;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  border-radius: 0 0 .5rem .5rem;
+  z-index: 999;
+}
+
+/* Guide list (About page "How to Use the Map") */
+.guide-list {
+  list-style: disc;
+  padding-left: 1.5rem;
+  margin: .5rem 0 1rem;
+}
+.guide-list li { margin-bottom: .4rem; line-height: 1.6; }
+
+/* Back-to-map variant (optional) */
+.btn { display:inline-flex; align-items:center; justify-content:center; }
+.btn.back-map {
+  margin-top: 1rem;
+  background: var(--accent);
+  color: #fff;
+  border: 2px solid var(--ink);
+}
+.btn.back-map:hover {
+  background: var(--accent-2);
+  color: var(--ink);
+}
+
+/* Cards grid list (Links page UL wrapper) */
+.cards--grid {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+.cards--grid .link-card { margin: 0; }
+
+
+/* make sure the map's stacking level is lower than overlays we add */
+#map { z-index: 0; }
+
+/* put the info button above Leaflet panes/controls */
+.map-info { z-index: 1200; }
+/* Legend styling inside the modal (not the floating card) */
+.legend-embed .legend-title{
+  font-family:"Archivo Black", system-ui;
+  font-size:1rem;
+  margin: .2rem 0 .45rem;
+  color: var(--ink);
+}
+.legend-embed .legend-list{
+  list-style:none;
+  padding:0;
+  margin:0;
+  display:flex;
+  flex-direction:column;
+  gap:.2rem;
+}
+.legend-embed .legend-row{
+  display:flex;
+  align-items:center;
+  gap:.55rem;
+  padding:.22rem .35rem;
+  border-radius:8px;
+}
+.legend-embed .legend-row:hover,
+.legend-embed .legend-row:focus-within{ background:#fff3d4; }
+.legend-embed .legend-row img{ width:20px; height:20px; display:block; }
+.legend-embed .legend-line{ display:inline-block; width:18px; height:3px; background:#2f7c31; border-radius:2px; }

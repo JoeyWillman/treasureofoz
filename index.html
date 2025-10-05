@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
- <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
   <title>Oz County Treasures</title>
   <meta name="description" content="Explore Ozaukee County's parks, trails, history, and hidden gems on a retro-styled interactive map." />
@@ -12,57 +12,55 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Work+Sans:wght@300;400;600&display=swap" rel="stylesheet">
 
-  <!-- Leaflet -->
+  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- MarkerCluster -->
+  <!-- MarkerCluster CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
-  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
-  <!-- Papa Parse -->
-  <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
-
+  <!-- Site styles -->
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+   <!-- Header -->
   <header id="site-header">
   <div class="brand">
-    <img src="data/photos/logo.png" alt="Oz County Treasures Logo" class="logo">
+    <a href="index.html" class="brand-logo" aria-label="Go to map">
+      <img src="data/photos/logo.png" alt="" class="logo" loading="lazy">
+    </a>
     <div class="brand-text">
-      <h1>Treasures of Oz</h1>
+      <h1 class="site-title">Treasures of Oz</h1>
       <p class="tag">Celebrating the Natural Gems of Ozaukee County</p>
     </div>
   </div>
   <nav class="nav-links">
-    <a href="index.html" class="nav-item active">Home</a>
+    <a href="index.html" class="nav-item">Home</a>
     <a href="about.html" class="nav-item">About</a>
     <a href="links.html" class="nav-item">Links</a>
   </nav>
 </header>
 
-<!-- Mobile-only filters (hidden on desktop) -->
-<div id="filters-mobile" class="filters-mobile" role="region" aria-label="Filters">
-  <div class="filters-inner">
-    <input id="mSearch" type="search" placeholder="Search places…" aria-label="Search" />
-    <select id="mFilterType" aria-label="Filter by type">
-      <option value="">Type: All</option>
-      <option value="naturepreserve">Nature Preserve</option>
-      <option value="parks">Park</option>
-      <option value="wpa">WPA</option>
-      <option value="other">Other</option>
-    </select>
-    <select id="mFilterLocation" aria-label="Filter by location (town/city)">
-      <option value="">Location: All</option>
-    </select>
-    <select id="mFilterActivity" aria-label="Filter by activity">
-      <option value="">Activity: All</option>
-    </select>
+
+  <!-- Mobile-only filters (hidden on desktop) -->
+  <div id="filters-mobile" class="filters-mobile" role="region" aria-label="Filters">
+    <div class="filters-inner">
+      <input id="mSearch" type="search" placeholder="Search places…" aria-label="Search" />
+      <select id="mFilterType" aria-label="Filter by type">
+        <option value="">Type: All</option>
+        <option value="naturepreserve">Nature Preserve</option>
+        <option value="parks">Park</option>
+        <option value="wpa">WPA</option>
+        <option value="other">Other</option>
+      </select>
+      <select id="mFilterLocation" aria-label="Filter by location (town/city)">
+        <option value="">Location: All</option>
+      </select>
+      <select id="mFilterActivity" aria-label="Filter by activity">
+        <option value="">Activity: All</option>
+      </select>
+    </div>
   </div>
-</div>
-
-
 
   <main id="layout">
     <aside id="sidebar" aria-label="Treasure list and filters">
@@ -92,17 +90,54 @@
     <section id="map-wrap">
       <div id="map" role="region" aria-label="Map of Ozaukee County"></div>
 
-      <div id="legend" class="legend" aria-hidden="false">
-        <div class="legend-title">Legend</div>
-        <div class="legend-row"><img src="data/icons/naturepreserve.png" alt="nature preserve icon"><span>Nature Preserve</span></div>
-        <div class="legend-row"><img src="data/icons/parks.png" alt="park icon"><span>Park</span></div>
-        <div class="legend-row"><img src="data/icons/wpa.png" alt="waterfowl production area icon"><span>WPA</span></div>
-        <div class="legend-row"><img src="data/icons/other.png" alt="other icon"><span>Other</span></div>
-        <div class="legend-row">
-  <span style="display:inline-block;width:18px;height:3px;background:#2f7c31;border-radius:2px;"></span>
-  <span>Interurban Trail</span>
+<!-- Small, accessible map info button -->
+<button id="mapInfoBtn" class="map-info" type="button" aria-haspopup="dialog" aria-controls="info-modal" aria-label="How to use this map">?</button>
+
+<!-- Info modal -->
+<div id="info-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="infoTitle" aria-hidden="true">
+  <div class="modal-backdrop" data-close="true"></div>
+  <div class="modal-card" role="document">
+    <button class="modal-close" type="button" aria-label="Close">✕</button>
+    <h2 id="infoTitle">How to Use the Map</h2>
+    <div class="modal-body">
+      <section class="guide">
+        <ul class="guide-list">
+          <li>Use the search bar and filters (Type, Location, Activity) to narrow results.</li>
+          <li>Click a list item or a map marker to see details; use “Details” for photos & links.</li>
+          <li>The Interurban Trail appears as a dashed green line.</li>
+        </ul>
+      </section>
+
+      <section class="legend-section">
+        <!-- We inject a cloned copy of the floating legend here -->
+        <div id="legendEmbed"></div>
+      </section>
+    </div>
+  </div>
 </div>
-      </div>
+
+
+   <div id="legend" class="legend" aria-hidden="false" aria-label="Map legend">
+  <div class="legend-title">Legend</div>
+  <ul class="legend-list" role="list">
+    <li class="legend-row" role="listitem">
+      <img src="data/icons/naturepreserve.png" alt="" loading="lazy"><span>Nature Preserve</span>
+    </li>
+    <li class="legend-row" role="listitem">
+      <img src="data/icons/parks.png" alt="" loading="lazy"><span>Park</span>
+    </li>
+    <li class="legend-row" role="listitem">
+      <img src="data/icons/wpa.png" alt="" loading="lazy"><span>WPA</span>
+    </li>
+    <li class="legend-row" role="listitem">
+      <img src="data/icons/other.png" alt="" loading="lazy"><span>Other</span>
+    </li>
+    <li class="legend-row" role="listitem">
+      <span class="legend-line"></span><span>Interurban Trail</span>
+    </li>
+  </ul>
+</div>
+
 
       <!-- Detail Drawer -->
       <div id="detail-drawer" class="drawer" aria-hidden="true">
@@ -115,47 +150,31 @@
   <footer id="site-footer">
     <p>Basemap © <a href="https://carto.com/" target="_blank" rel="noopener">CARTO</a> · © OpenStreetMap contributors · Built by Joey Willman</p>
   </footer>
-<script>
-  (function () {
-    function setLayoutVars() {
-      var hdr = document.getElementById('site-header');
-      var ftr = document.getElementById('site-footer');
-      if (hdr) {
-        var h = Math.round(hdr.getBoundingClientRect().height);
-        document.documentElement.style.setProperty('--hdr', h + 'px');
+
+  <!-- Consolidated layout measurements (replaces two near-duplicates) -->
+  <script>
+    (function () {
+      function setLayoutVars() {
+        const hdr = document.getElementById('site-header');
+        const ftr = document.getElementById('site-footer');
+        const mob = document.getElementById('filters-mobile');
+        if (hdr) document.documentElement.style.setProperty('--hdr', Math.round(hdr.getBoundingClientRect().height) + 'px');
+        if (ftr) document.documentElement.style.setProperty('--ftr', Math.round(ftr.getBoundingClientRect().height) + 'px');
+        if (mob) document.documentElement.style.setProperty('--mobf', Math.round(mob.getBoundingClientRect().height) + 'px');
       }
-      if (ftr) {
-        var f = Math.round(ftr.getBoundingClientRect().height);
-        document.documentElement.style.setProperty('--ftr', f + 'px');
-      }
-    }
-    // Run when fonts finish loading too (header height can change)
-    if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(setLayoutVars);
-    }
-    window.addEventListener('load', setLayoutVars, { passive: true });
-    window.addEventListener('resize', setLayoutVars, { passive: true });
-    window.addEventListener('orientationchange', setLayoutVars, { passive: true });
-  })();
-</script>
+      if (document.fonts?.ready) document.fonts.ready.then(setLayoutVars);
+      window.addEventListener('load', setLayoutVars, { passive: true });
+      window.addEventListener('resize', setLayoutVars, { passive: true });
+      window.addEventListener('orientationchange', setLayoutVars, { passive: true });
+    })();
+  </script>
 
-<script>
-  (function () {
-    function setHeights() {
-      var hdr = document.getElementById('site-header');
-      var mob = document.getElementById('filters-mobile');
-      if (hdr) document.documentElement.style.setProperty('--hdr', Math.round(hdr.getBoundingClientRect().height) + 'px');
-      if (mob) document.documentElement.style.setProperty('--mobf', Math.round(mob.getBoundingClientRect().height) + 'px');
-    }
-    if (document.fonts && document.fonts.ready) { document.fonts.ready.then(setHeights); }
-    window.addEventListener('load', setHeights, { passive: true });
-    window.addEventListener('resize', setHeights, { passive: true });
-    window.addEventListener('orientationchange', setHeights, { passive: true });
-  })();
-</script>
+  <!-- Vendor libraries (deferred so the page paints fast) -->
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script defer src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script defer src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 
-<script src="main.js"></script>
-
-  <script src="main.js"></script>
+  <!-- App script (single include) -->
+  <script defer src="main.js"></script>
 </body>
 </html>

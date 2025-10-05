@@ -4,34 +4,46 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>About | Oz County Treasures</title>
+  <meta name="description" content="About Treasures of Oz, a retro-styled interactive guide to Ozaukee County’s natural places." />
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;600;700&family=Archivo+Black&display=swap" rel="stylesheet">
 </head>
 
 <body>
+  <a class="skip-link" href="#content">Skip to content</a>
+
   <!-- Header -->
-   <header id="site-header">
+ <header id="site-header">
   <div class="brand">
-    <img src="data/photos/logo.png" alt="Oz County Treasures Logo" class="logo">
+    <a href="index.html" class="brand-logo" aria-label="Go to map">
+      <img src="data/photos/logo.png" alt="" class="logo" loading="lazy">
+    </a>
     <div class="brand-text">
-      <h1>Treasures of Oz</h1>
+      <h1 class="site-title">Treasures of Oz</h1>
       <p class="tag">Celebrating the Natural Gems of Ozaukee County</p>
     </div>
   </div>
   <nav class="nav-links">
     <a href="index.html" class="nav-item">Home</a>
-    <a href="about.html" class="nav-item active">About</a>
+    <a href="about.html" class="nav-item">About</a>
     <a href="links.html" class="nav-item">Links</a>
   </nav>
 </header>
 
+
   <!-- Main Content -->
   <main id="content">
     <section class="intro-section">
-      <h2>About Treasures of Oz</h2>
-      <p>
-        The Treasures of Oz is a partnership of organizations and individuals who bring together their efforts and resources to promote environmental awareness, education and stewardship of the natural resources of Ozaukee County. The Treasures of Oz project is a resource for those who live and recreate in Ozaukee County in order to foster awareness of their natural surroundings and to engage them in a meaningful and sustainable way. Our long term goal is to provide a vehicle for continued partnership, growth and collaboration for environmental stewardship in Ozaukee County.
+      <h1>About Treasures of Oz</h1>
+      <p class="lede">
+        Treasures of Oz is a partnership that promotes environmental awareness, education, and stewardship across Ozaukee County.
       </p>
+      <ul>
+        <li>Help residents and visitors discover local natural areas</li>
+        <li>Foster awareness of our natural surroundings</li>
+        <li>Encourage meaningful, sustainable engagement</li>
+        <li>Provide a vehicle for ongoing collaboration</li>
+      </ul>
     </section>
 
     <section class="about-site">
@@ -41,11 +53,25 @@
       </p>
       <p>
         Learn more about Joseph and his work here:
-        <a href="https://joeywillman.github.io/Joseph-Willman-Portfolio/" target="_blank">Joseph Willman Portfolio</a>.
+        <a href="https://joeywillman.github.io/Joseph-Willman-Portfolio/" target="_blank" rel="noopener">Joseph Willman Portfolio</a>.
       </p>
+    </section>
+
+    <section class="about-howto">
+      <h2>How to Use the Map</h2>
+      <ul class="guide-list">
+        <li>Use the search and filters to find places by type, activity, and location.</li>
+        <li>Click a list item or map marker to open details and photos.</li>
+        <li>Trail lines are shown where data is available.</li>
+        <li>On phones, filters open in a compact panel so the map stays visible.</li>
+      </ul>
+      <p><a class="btn" href="index.html">Back to the map</a></p>
     </section>
   </main>
 
-  
+  <footer class="site-foot">
+    <p>© <span id="year"></span> Treasures of Oz • Ozaukee County, Wisconsin</p>
+  </footer>
+  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
 </body>
 </html>

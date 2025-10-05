@@ -4,65 +4,78 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Links | Oz County Treasures</title>
+  <meta name="description" content="Curated links to Treasures of Oz resources, partner sites, maps, and environmental education for Ozaukee County." />
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;600;700&family=Archivo+Black&display=swap" rel="stylesheet">
 </head>
 
 <body>
+  <a class="skip-link" href="#content">Skip to content</a>
+
   <!-- Header -->
-   <header id="site-header">
+<header id="site-header">
   <div class="brand">
-    <img src="data/photos/logo.png" alt="Oz County Treasures Logo" class="logo">
+    <a href="index.html" class="brand-logo" aria-label="Go to map">
+      <img src="data/photos/logo.png" alt="" class="logo" loading="lazy">
+    </a>
     <div class="brand-text">
-      <h1>Treasures of Oz</h1>
+      <h1 class="site-title">Treasures of Oz</h1>
       <p class="tag">Celebrating the Natural Gems of Ozaukee County</p>
     </div>
   </div>
   <nav class="nav-links">
     <a href="index.html" class="nav-item">Home</a>
     <a href="about.html" class="nav-item">About</a>
-    <a href="links.html" class="nav-item active">Links</a>
+    <a href="links.html" class="nav-item">Links</a>
   </nav>
 </header>
+
+
 
   <!-- Main Content -->
   <main id="content">
     <section class="links-intro">
-      <h2>Explore More Resources</h2>
-      <p>Discover partner sites, maps, and educational resources that support conservation, recreation, and environmental awareness in Ozaukee County and beyond.</p>
+      <h1>Explore More Resources</h1>
+      <p class="lede">Discover partner sites, maps, and educational resources that support conservation, recreation, and environmental awareness in Ozaukee County and beyond.</p>
     </section>
 
-    <section class="links-grid">
-      <div class="link-card">
-        <h3>🌿 Treasures of Oz</h3>
-        <ul>
-          <li><a href="https://treasuresofoz.org/treasures" target="_blank">Official Website</a></li>
-          <li><a href="https://www.facebook.com/TreasuresofOz/" target="_blank">Facebook Page</a></li>
-          <li><a href="https://treasuresofoz.org/eco-news" target="_blank">Eco News Blog</a></li>
-          <li><a href="https://treasuresofoz.org/learn" target="_blank">Learn More About the Environment</a></li>
-          <li><a href="https://treasuresofoz.org/links" target="_blank">More Links and Resources</a></li>
-        </ul>
-      </div>
+    <!-- Keep your “card” feel; use a list for better semantics and SR navigation -->
+    <section class="links-grid" aria-label="Resource categories">
+      <ul class="cards cards--grid" role="list">
+        <li class="link-card" role="listitem">
+          <h2 class="card__title">🌿 Treasures of Oz</h2>
+          <ul>
+            <li><a href="https://treasuresofoz.org/treasures" target="_blank" rel="noopener">Official Website</a></li>
+            <li><a href="https://www.facebook.com/TreasuresofOz/" target="_blank" rel="noopener">Facebook Page</a></li>
+            <li><a href="https://treasuresofoz.org/eco-news" target="_blank" rel="noopener">Eco News Blog</a></li>
+            <li><a href="https://treasuresofoz.org/learn" target="_blank" rel="noopener">Learn More About the Environment</a></li>
+            <li><a href="https://treasuresofoz.org/links" target="_blank" rel="noopener">More Links and Resources</a></li>
+          </ul>
+        </li>
 
-      <div class="link-card">
-        <h3>🚶 Outdoor Adventures</h3>
-        <ul>
-          <li><a href="https://joeywillman.github.io/ozaukee-interurbantrail-birding/" target="_blank">Interurban Trail Birding Guide</a></li>
-          <li><a href="https://treasuresofoz.org/canoeing-kayaking" target="_blank">Canoe & Kayak Opportunities</a></li>
-        </ul>
-      </div>
+        <li class="link-card" role="listitem">
+          <h2 class="card__title">🚶 Outdoor Adventures</h2>
+          <ul>
+            <li><a href="https://joeywillman.github.io/ozaukee-interurbantrail-birding/" target="_blank" rel="noopener">Interurban Trail Birding Guide</a></li>
+            <li><a href="https://treasuresofoz.org/canoeing-kayaking" target="_blank" rel="noopener">Canoe &amp; Kayak Opportunities</a></li>
+          </ul>
+        </li>
 
-      <div class="link-card">
-        <h3>🌱 In Your Own Backyard
-
-        </h3>
-        <ul>
-          <li><a href="https://treasuresofoz.org/native-plant-nurseries-in-wisconsin" target="_blank">Buy Native Plants in Wisconsin</a></li>
-          <li><a href="https://treasuresofoz.org/rewild" target="_blank">Rewild Program</a></li>
-        </ul>
-      </div>
+        <li class="link-card" role="listitem">
+          <h2 class="card__title">🌱 In Your Own Backyard</h2>
+          <ul>
+            <li><a href="https://treasuresofoz.org/native-plant-nurseries-in-wisconsin" target="_blank" rel="noopener">Buy Native Plants in Wisconsin</a></li>
+            <li><a href="https://treasuresofoz.org/rewild" target="_blank" rel="noopener">Rewild Program</a></li>
+          </ul>
+        </li>
+      </ul>
+    </section>
   </main>
 
-
+  <!-- Small, consistent footer (matches other pages) -->
+  <footer class="site-foot">
+    <p>© <span id="year"></span> Treasures of Oz • Ozaukee County, Wisconsin</p>
+  </footer>
+  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
 </body>
 </html>
