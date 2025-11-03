@@ -855,3 +855,45 @@ body{
     width: 28px; height: 28px; line-height: 28px; font-size: 20px;
   }
 }
+/* =========================
+   Kayak route styling
+   ========================= */
+.kayak-line{
+  stroke-dasharray: 8 6;
+  animation: dashmove 12s linear infinite; /* re-use same keyframes as trail */
+}
+
+.leaflet-pane#kayakPane path.kayak-line:hover{
+  stroke-width: 6 !important;
+}
+
+/* River-specific colors + soft glow */
+.leaflet-pane#kayakPane path.kayak--milwaukee{
+  stroke: #1e6bd6; /* Milwaukee River */
+  filter:
+    drop-shadow(0 0 4px rgba(30,107,214,.45))
+    drop-shadow(0 0 6px rgba(30,107,214,.30));
+}
+
+.leaflet-pane#kayakPane path.kayak--cedar{
+  stroke: #0b8f5a; /* Cedar Creek */
+  filter:
+    drop-shadow(0 0 4px rgba(11,143,90,.50))
+    drop-shadow(0 0 6px rgba(11,143,90,.30));
+}
+
+/* Optional fallback if a segment doesn't match either river name */
+.leaflet-pane#kayakPane path.kayak--unknown{
+  stroke: #586e75;
+  filter:
+    drop-shadow(0 0 4px rgba(88,110,117,.45))
+    drop-shadow(0 0 6px rgba(88,110,117,.25));
+}
+
+/* Legend swatch if you show one for kayaking */
+.legend-line.legend-kayak{
+  display:inline-block;
+  width:18px; height:3px; border-radius:2px;
+  background:#1e6bd6; /* primary swatch; Milwaukee blue */
+}
+
